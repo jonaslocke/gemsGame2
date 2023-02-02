@@ -22,22 +22,50 @@ body {
 .gem {
   width: var(--gemSize);
   height: var(--gemSize);
-  background-color: red;
-  border: 1px solid #000;
+  position: relative;
+}
+
+.gem::before {
+  content: "";
+  display: block;
+  position: absolute;
+  width: calc(var(--gemSize) - 4px);
+  height: calc(var(--gemSize) - 4px);
+  background-color: #333;
+  top: 2px;
+  left: 2px;
+  z-index: -2;
+}
+
+.gem.selected::after {
+  content: "";
+  display: block;
+  position: absolute;
+  width: calc(var(--gemSize) - 8px);
+  height: calc(var(--gemSize) - 8px);
+  border-radius: 50%;
+  background: #111;
+  top: 4px;
+  left: 4px;
+  z-index: -1;
+}
+
+.gem.highlighted {
+  border: 1px dashed #999;
 }
 
 .gem.green {
-  background-color: green;
+  background: url("images/05_apple_pie.png") no-repeat center;
 }
 .gem.red {
-  background-color: red;
+  background: url("images/15_burger.png") no-repeat center;
 }
 .gem.blue {
-  background-color: blue;
+  background: url("images/46_fruitcake.png") no-repeat center;
 }
 .gem.yellow {
-  background-color: yellow;
+  background: url("images/57_icecream.png") no-repeat center;
 }
 .gem.purple {
-  background-color: purple;
+  background: url("images/81_pizza.png") no-repeat center;
 }
