@@ -174,6 +174,15 @@ class Game {
 
     return rows;
   }
+
+  getGemPosition(index) {
+    const column = this.columns.indexOf(
+      this.columns.find((column) => column.includes(index))
+    );
+    const row = this.rows.indexOf(this.rows.find((row) => row.includes(index)));
+
+    return { column, row };
+  }
 }
 
 const game = new Game(4, gameEl);
