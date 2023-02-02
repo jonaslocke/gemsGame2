@@ -68,11 +68,13 @@ class Gem {
 class Game {
   constructor(size, anchor) {
     this.size = size * size;
-    this.columns = size;
+    this.gridSize = size;
     this.state = this.getState(size);
     this.anchor = this.getAnchor(anchor, size);
     this.selectedGem = -1;
     this.neighbors = null;
+    this.columns = this.getColumns();
+    this.rows = this.getRows();
   }
 
   getState() {
@@ -85,7 +87,7 @@ class Game {
   }
 
   getAnchor(anchor) {
-    anchor.style = `--columns: ${this.columns}`;
+    anchor.style = `--columns: ${this.gridSize}`;
     return anchor;
   }
 
@@ -95,18 +97,18 @@ class Game {
   }
 
   findNeighbors() {
-    let top = this.selectedGem - this.columns;
+    let top = this.selectedGem - this.gridSize;
     let right = this.selectedGem + 1;
-    let bottom = this.selectedGem + this.columns;
+    let bottom = this.selectedGem + this.gridSize;
     let left = this.selectedGem - 1;
 
     if (top < 0) {
       top = null;
     }
-    if (left < 0 || this.selectedGem % this.columns === 0) {
+    if (left < 0 || this.selectedGem % this.gridSize === 0) {
       left = null;
     }
-    if (right % this.columns === 0 || right > this.size) {
+    if (right % this.gridSize === 0 || right > this.size) {
       right = null;
     }
     if (bottom >= this.size) {
@@ -147,6 +149,30 @@ class Game {
       });
       this.anchor.appendChild(gemEl);
     }
+  }
+
+  getColumns() {
+    const firstColumn = new Array(this.gridSize)
+      .fill()
+      .map((_, index) => index * this.gridSize);
+
+    const columns = new Array(this.gridSize)
+      .fill()
+      .map((_, index) => firstColumn.map((column) => column + index));
+
+    return columns;
+  }
+
+  getRows() {
+    const rows = new Array(this.gridSize)
+      .fill()
+      .map((_, index) =>
+        new Array(this.gridSize)
+          .fill()
+          .map((_, xedni) => index * this.gridSize + xedni)
+      );
+
+    return rows;
   }
 }
 
