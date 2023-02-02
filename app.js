@@ -65,18 +65,16 @@ class Gem {
     this.selected = bool;
   }
 }
-class GameState {
-  constructor(size = 4, anchor) {
-    this.size = clamp(size, 4, Math.floor(size / 4) * 4);
-    this.columns = this.getColumns();
+class Game {
+  constructor(size, anchor) {
+    this.size = size * size;
+    this.columns = size;
     this.state = this.getState(size);
     this.anchor = this.getAnchor(anchor, size);
     this.selectedGem = -1;
     this.neighbors = null;
   }
-  getColumns() {
-    return this.size / 4;
-  }
+
   getState() {
     return new Array(this.size)
       .fill()
@@ -86,8 +84,8 @@ class GameState {
       );
   }
 
-  getAnchor(anchor, size) {
-    anchor.style = `--columns: ${clamp(size / 4, 2, Infinity)}`;
+  getAnchor(anchor) {
+    anchor.style = `--columns: ${this.columns}`;
     return anchor;
   }
 
@@ -115,6 +113,7 @@ class GameState {
       bottom = null;
     }
     this.neighbors = { top, right, bottom, left };
+
     this.highlightNeighbors();
   }
 
@@ -151,7 +150,7 @@ class GameState {
   }
 }
 
-const game = new GameState(16, gameEl);
+const game = new Game(4, gameEl);
 
 game.draw();
 
