@@ -1,0 +1,43 @@
+:root {
+  --gemSize: 48px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #444;
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+}
+
+#game {
+  display: flex;
+  flex-wrap: wrap;
+  width: calc(var(--gemSize) * var(--columns));
+}
+
+.gem {
+  width: var(--gemSize);
+  height: var(--gemSize);
+  background-color: red;
+  border: 1px solid #000;
+}
+
+.gem.green {
+  background-color: green;
+}
+.gem.red {
+  background-color: red;
+}
+.gem.blue {
+  background-color: blue;
+}
+.gem.yellow {
+  background-color: yellow;
+}
+.gem.purple {
+  background-color: purple;
+}
