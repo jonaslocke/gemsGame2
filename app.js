@@ -26,12 +26,20 @@ const gemProps = {
     yellow: "YELLOW",
     purple: "PURPLE",
   },
+  points: {
+    green: 2,
+    red: 4,
+    blue: 8,
+    yellow: 16,
+    purple: 32,
+  },
   getColors: () => Object.values(gemProps.color),
 };
 
 class Gem {
   constructor(color, index = 0) {
     this.color = this.getColor(color);
+    this.points = this.getPoints(color);
     this.index = index;
     this.selected = false;
     this.highlighted = false;
@@ -42,6 +50,13 @@ class Gem {
       return gemProps.color[color.toLowerCase()];
     }
     return gemProps.color.blue;
+  }
+
+  getPoints(color) {
+    if (gemProps.getColors().includes(color.toUpperCase())) {
+      return gemProps.points[color.toLowerCase()];
+    }
+    return gemProps.points.blue;
   }
 
   draw() {
@@ -185,7 +200,7 @@ class Game {
   }
 }
 
-const game = new Game(4, gameEl);
+const game = new Game(8, gameEl);
 
 game.draw();
 
