@@ -17,9 +17,9 @@ const gemProps = {
 };
 
 class Gem {
-  constructor(color, index = 0) {
+  constructor(color, position = 0) {
     this.color = this.getColor(color);
-    this.index = index;
+    this.position = position;
     this.selected = false;
     this.highlighted = false;
     this.matching = false;
@@ -45,7 +45,7 @@ class Gem {
       gem.classList.add("matching");
     }
 
-    gem.id = `gem-${this.index}`;
+    gem.id = `gem-${this.position}`;
 
     return gem;
   }
@@ -136,7 +136,7 @@ class Game {
 
   highlightNeighbors() {
     for (let gem of this.state) {
-      gem.highlighted = Object.values(this.neighbors).includes(gem.index);
+      gem.highlighted = Object.values(this.neighbors).includes(gem.position);
     }
 
     this.draw();
@@ -147,7 +147,7 @@ class Game {
     for (let gem of this.state) {
       const gemEl = gem.draw();
       gemEl.addEventListener("click", () => {
-        const alreadySelected = this.selectedGem === gem.index;
+        const alreadySelected = this.selectedGem === gem.position;
         if (alreadySelected) {
           for (let gem of this.state) {
             gem.select(false);
@@ -155,9 +155,9 @@ class Game {
             this.selectedGem = -1;
           }
         } else {
-          console.log({ selectedGem: gem.index });
-          this.setSelectedGem(gem.index);
-          const neighbors = this.findNeighbors(gem.index);
+          console.log({ selectedGem: gem.position });
+          this.setSelectedGem(gem.position);
+          const neighbors = this.findNeighbors(gem.position);
           this.setNeighbors(neighbors);
         }
       });
