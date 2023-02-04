@@ -5,19 +5,6 @@ const $$ = (el) => document.querySelectorAll(el);
 
 const gameEl = $("#game");
 
-const clamp = (value, min, max) => {
-  value = Math.floor(value);
-  min = Math.floor(min);
-  max = Math.floor(max);
-
-  return value < min ? min : value > max ? max : value;
-};
-
-const getRandomItemFromArray = (array) => {
-  const random = Math.floor(Math.random() * array.length);
-  return array[random];
-};
-
 const gemProps = {
   color: {
     green: "GREEN",
@@ -26,23 +13,16 @@ const gemProps = {
     yellow: "YELLOW",
     purple: "PURPLE",
   },
-  points: {
-    green: 2,
-    red: 4,
-    blue: 8,
-    yellow: 16,
-    purple: 32,
-  },
   getColors: () => Object.values(gemProps.color),
 };
 
 class Gem {
   constructor(color, index = 0) {
     this.color = this.getColor(color);
-    this.points = this.getPoints(color);
     this.index = index;
     this.selected = false;
     this.highlighted = false;
+    this.matching = false;
   }
 
   getColor(color) {
@@ -50,13 +30,6 @@ class Gem {
       return gemProps.color[color.toLowerCase()];
     }
     return gemProps.color.blue;
-  }
-
-  getPoints(color) {
-    if (gemProps.getColors().includes(color.toUpperCase())) {
-      return gemProps.points[color.toLowerCase()];
-    }
-    return gemProps.points.blue;
   }
 
   draw() {
@@ -67,6 +40,9 @@ class Gem {
     }
     if (this.highlighted) {
       gem.classList.add("highlighted");
+    }
+    if (this.matching) {
+      gem.classList.add("matching");
     }
 
     gem.id = `gem-${this.index}`;
@@ -93,6 +69,7 @@ class Game {
   }
 
   getState() {
+    // return stateMock;
     return new Array(this.size)
       .fill()
       .map(
@@ -111,16 +88,17 @@ class Game {
     this.state.forEach((gem, idx) => gem.select(index === idx));
   }
 
-  findNeighbors() {
-    let top = this.selectedGem - this.gridSize;
-    let right = this.selectedGem + 1;
-    let bottom = this.selectedGem + this.gridSize;
-    let left = this.selectedGem - 1;
+  findNeighbors(gemIndex) {
+    gemIndex = Number(gemIndex);
+    let top = gemIndex - this.gridSize;
+    let right = gemIndex + 1;
+    let bottom = gemIndex + this.gridSize;
+    let left = gemIndex - 1;
 
     if (top < 0) {
       top = null;
     }
-    if (left < 0 || this.selectedGem % this.gridSize === 0) {
+    if (left < 0 || gemIndex % this.gridSize === 0) {
       left = null;
     }
     if (right % this.gridSize === 0 || right > this.size) {
@@ -129,8 +107,11 @@ class Game {
     if (bottom >= this.size) {
       bottom = null;
     }
-    this.neighbors = { top, right, bottom, left };
+    return { top, right, bottom, left };
+  }
 
+  setNeighbors({ top, right, bottom, left }) {
+    this.neighbors = { top, right, bottom, left };
     this.highlightNeighbors();
   }
 
@@ -159,7 +140,8 @@ class Game {
         } else {
           console.log({ selectedGem: gem.index });
           this.setSelectedGem(gem.index);
-          this.findNeighbors();
+          const neighbors = this.findNeighbors(gem.index);
+          this.setNeighbors(neighbors);
         }
       });
       this.anchor.appendChild(gemEl);
@@ -198,12 +180,161 @@ class Game {
 
     return { column, row };
   }
+
+  update() {
+    for (let index in this.state) {
+      const gem = this.state[index];
+      const neighbors = this.findNeighbors(index);
+      const { top, bottom, right, left } = neighbors;
+      const horizontal = [left, right];
+      const vertical = [top, bottom];
+      const hasNeighborsVertically = vertical.every(
+        (neighbor) => neighbor !== null
+      );
+      const hasNeighborsHorizontally = horizontal.every(
+        (neighbor) => neighbor !== null
+      );
+
+      const isMatching = (pool) => {
+        const gems = pool.map((index) => this.state[index]);
+        return gems
+          .map((gem) => gem.color)
+          .every((color) => color === gem.color);
+      };
+
+      if (hasNeighborsVertically) {
+        if (isMatching(vertical)) {
+          gem.matching = true;
+          vertical.forEach((postion) => (this.state[postion].matching = true));
+        }
+      }
+
+      if (hasNeighborsHorizontally) {
+        if (isMatching(horizontal)) {
+          gem.matching = true;
+          horizontal.forEach(
+            (postion) => (this.state[postion].matching = true)
+          );
+        }
+      }
+    }
+    console.table(this.state);
+    this.draw();
+  }
 }
+
+const stateMock = [
+  {
+    color: "GREEN",
+    index: 0,
+    selected: false,
+    highlighted: false,
+  },
+  {
+    color: "GREEN",
+    index: 1,
+    selected: false,
+    highlighted: false,
+  },
+  {
+    color: "GREEN",
+    index: 2,
+    selected: false,
+    highlighted: false,
+  },
+  {
+    color: "YELLOW",
+    index: 3,
+    selected: false,
+    highlighted: false,
+  },
+  {
+    color: "GREEN",
+    index: 4,
+    selected: false,
+    highlighted: false,
+  },
+  {
+    color: "RED",
+    index: 5,
+    selected: false,
+    highlighted: false,
+  },
+  {
+    color: "GREEN",
+    index: 6,
+    selected: false,
+    highlighted: false,
+  },
+  {
+    color: "YELLOW",
+    index: 7,
+    selected: false,
+    highlighted: false,
+  },
+  {
+    color: "BLUE",
+    index: 8,
+    selected: false,
+    highlighted: false,
+  },
+  {
+    color: "PURPLE",
+    index: 9,
+    selected: false,
+    highlighted: false,
+  },
+  {
+    color: "RED",
+    index: 10,
+    selected: false,
+    highlighted: false,
+  },
+  {
+    color: "YELLOW",
+    index: 11,
+    selected: false,
+    highlighted: false,
+  },
+  {
+    color: "PURPLE",
+    index: 12,
+    selected: false,
+    highlighted: false,
+  },
+  {
+    color: "YELLOW",
+    index: 13,
+    selected: false,
+    highlighted: false,
+  },
+  {
+    color: "GREEN",
+    index: 14,
+    selected: false,
+    highlighted: false,
+  },
+  {
+    color: "YELLOW",
+    index: 15,
+    selected: false,
+    highlighted: false,
+  },
+].map((gem, index) => new Gem(gem.color, index));
+
+const clamp = (value, min, max) => {
+  value = Math.floor(value);
+  min = Math.floor(min);
+  max = Math.floor(max);
+
+  return value < min ? min : value > max ? max : value;
+};
+
+const getRandomItemFromArray = (array) => {
+  const random = Math.floor(Math.random() * array.length);
+  return array[random];
+};
 
 const game = new Game(8, gameEl);
 
-game.draw();
-
-setInterval(() => {
-  game.draw();
-}, 300);
+game.update();
