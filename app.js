@@ -107,7 +107,26 @@ class Game {
     if (bottom >= this.size) {
       bottom = null;
     }
-    return { top, right, bottom, left };
+
+    const horizontal = [left, right];
+    const vertical = [top, bottom];
+    const hasNeighborsVertically = vertical.every(
+      (neighbor) => neighbor !== null
+    );
+    const hasNeighborsHorizontally = horizontal.every(
+      (neighbor) => neighbor !== null
+    );
+
+    return {
+      top,
+      right,
+      bottom,
+      left,
+      horizontal,
+      vertical,
+      hasNeighborsHorizontally,
+      hasNeighborsVertically,
+    };
   }
 
   setNeighbors({ top, right, bottom, left }) {
@@ -116,13 +135,11 @@ class Game {
   }
 
   highlightNeighbors() {
-    const neighbors = Object.values(this.neighbors).filter(
-      (index) => index !== null
-    );
+    for (let gem of this.state) {
+      gem.highlighted = Object.values(this.neighbors).includes(gem.index);
+    }
 
-    this.state.forEach((gem, index) =>
-      gem.highlight(neighbors.includes(index))
-    );
+    this.draw();
   }
 
   draw() {
@@ -184,16 +201,12 @@ class Game {
   update() {
     for (let index in this.state) {
       const gem = this.state[index];
-      const neighbors = this.findNeighbors(index);
-      const { top, bottom, right, left } = neighbors;
-      const horizontal = [left, right];
-      const vertical = [top, bottom];
-      const hasNeighborsVertically = vertical.every(
-        (neighbor) => neighbor !== null
-      );
-      const hasNeighborsHorizontally = horizontal.every(
-        (neighbor) => neighbor !== null
-      );
+      const {
+        horizontal,
+        vertical,
+        hasNeighborsHorizontally,
+        hasNeighborsVertically,
+      } = this.findNeighbors(index);
 
       const isMatching = (pool) => {
         const gems = pool.map((index) => this.state[index]);
@@ -335,6 +348,6 @@ const getRandomItemFromArray = (array) => {
   return array[random];
 };
 
-const game = new Game(8, gameEl);
+const game = new Game(4, gameEl);
 
 game.update();
