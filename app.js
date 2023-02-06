@@ -16,7 +16,7 @@ const gemProps = {
   getColors: () => Object.values(gemProps.color),
 };
 
-const SIZE = 16;
+const SIZE = 12;
 
 const clamp = (value, min, max) => {
   value = Math.floor(value);
@@ -99,17 +99,9 @@ class Game {
         state[position] = newGem;
       }
     };
-    for (let position = 0; position < this.size; position++) {
-      const gem = new Gem(
-        getRandomItemFromArray(gemProps.getColors()),
-        position
-      );
 
-      state.push(gem);
-      gemColorToAvoid = [];
-
-      //shouldGetNewGem in horizontal direction
-      if (position > 1) {
+    const getGemsPool = (gem, position, direction = "horizontal") => {
+      if (direction === "horizontal") {
         const row = this.getRows().find((row) => row.includes(gem.position));
         const positionRelativeToRow = row.indexOf(position);
         const positionInState = row[positionRelativeToRow];
@@ -120,11 +112,12 @@ class Game {
             state[positionInState - 1],
             gem,
           ];
-          checkMatchingGem(gemsPool, gem, position, "horizontal");
+
+          return gemsPool;
         }
       }
-      //shouldGetNewGem in vertical direction
-      if (position >= this.gridSize * 2) {
+
+      if (direction === "vertical") {
         const column = this.getColumns().find((column) =>
           column.includes(gem.position)
         );
@@ -134,6 +127,33 @@ class Game {
           state[column[positionRelativeToColumn - 1]],
           gem,
         ];
+        return gemsPool;
+      }
+
+      return null;
+    };
+    for (let position = 0; position < this.size; position++) {
+      const shouldCheckInHorizontal = position > 1;
+      const shouldCheckInVertical = position >= this.gridSize * 2;
+      const gem = new Gem(
+        getRandomItemFromArray(gemProps.getColors()),
+        position
+      );
+
+      state.push(gem);
+      gemColorToAvoid = [];
+
+      //shouldGetNewGem in horizontal direction
+      if (shouldCheckInHorizontal) {
+        const gemsPool = getGemsPool(gem, position);
+
+        if (gemsPool) {
+          checkMatchingGem(gemsPool, gem, position, "vertical");
+        }
+      }
+      //shouldGetNewGem in vertical direction
+      if (shouldCheckInVertical) {
+        const gemsPool = getGemsPool(gem, position, "vertical");
 
         checkMatchingGem(gemsPool, gem, position, "vertical");
       }
