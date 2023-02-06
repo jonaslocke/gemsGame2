@@ -239,6 +239,7 @@ class Game {
 
     this.draw();
   }
+
   unselectGems() {
     for (let gem of this.state) {
       gem.select(false);
@@ -248,13 +249,28 @@ class Game {
     this.draw();
   }
 
+  swapGems(position) {
+    const origin = this.selectedGem;
+
+    this.state[this.selectedGem].position = position;
+    this.state[position].position = origin;
+
+    this.update();
+  }
+
   draw() {
     this.anchor.innerHTML = "";
     for (let gem of this.state) {
       const gemEl = gem.draw();
       gemEl.addEventListener("click", () => {
         const alreadySelected = this.selectedGem === gem.position;
-        alreadySelected
+        const shouldSwapGems =
+          this.selectedGem >= 0 &&
+          Object.values(this.neighbors).includes(gem.position);
+        if (shouldSwapGems) {
+          return this.swapGems(gem.position);
+        }
+        return alreadySelected
           ? this.unselectGems()
           : this.setSelectedGem(gem.position);
       });
@@ -301,6 +317,7 @@ class Game {
   }
 
   update() {
+    this.state.sort((a, b) => a.position - b.position);
     for (let index in this.state) {
       const gem = this.state[index];
       const {
@@ -326,6 +343,7 @@ class Game {
         }
       }
     }
+    this.unselectGems();
     console.table(this.state);
     this.draw();
   }
