@@ -16,7 +16,7 @@ const gemProps = {
   getColors: () => Object.values(gemProps.color),
 };
 
-const SIZE = 12;
+const SIZE = 6;
 
 const clamp = (value, min, max) => {
   value = Math.floor(value);
@@ -87,18 +87,6 @@ class Game {
     // return stateMock;
     const state = [];
     let gemColorToAvoid = [];
-    const checkMatchingGem = (gemsPool, gem, position, direction) => {
-      const shouldGetNewGem = gemsPool.every((g) => g.color === gem.color);
-      if (shouldGetNewGem) {
-        gemColorToAvoid.push(gem.color);
-        const gemsRoaster = gemProps
-          .getColors()
-          .filter((color) => !gemColorToAvoid.includes(color));
-
-        const newGem = new Gem(getRandomItemFromArray(gemsRoaster), position);
-        state[position] = newGem;
-      }
-    };
 
     const getGemsPool = (gem, position, direction = "horizontal") => {
       if (direction === "horizontal") {
@@ -132,6 +120,23 @@ class Game {
 
       return null;
     };
+
+    const checkMatchingGem = (gem, position, direction) => {
+      const gemsPool = getGemsPool(gem, position, direction);
+      if (gemsPool) {
+        const shouldGetNewGem = gemsPool.every((g) => g.color === gem.color);
+        if (shouldGetNewGem) {
+          gemColorToAvoid.push(gem.color);
+          const gemsRoaster = gemProps
+            .getColors()
+            .filter((color) => !gemColorToAvoid.includes(color));
+
+          const newGem = new Gem(getRandomItemFromArray(gemsRoaster), position);
+          state[position] = newGem;
+        }
+      }
+    };
+
     for (let position = 0; position < this.size; position++) {
       const shouldCheckInHorizontal = position > 1;
       const shouldCheckInVertical = position >= this.gridSize * 2;
@@ -145,17 +150,25 @@ class Game {
 
       //shouldGetNewGem in horizontal direction
       if (shouldCheckInHorizontal) {
-        const gemsPool = getGemsPool(gem, position);
-
-        if (gemsPool) {
-          checkMatchingGem(gemsPool, gem, position, "vertical");
+        if (shouldCheckInVertical) {
+          const verticalGemsPool = getGemsPool(gem, position, "vertical");
+          if (verticalGemsPool[0].color === verticalGemsPool[1].color) {
+            gemColorToAvoid.push(verticalGemsPool[0].color);
+          }
         }
+        checkMatchingGem(gem, position, "horizontal");
       }
       //shouldGetNewGem in vertical direction
       if (shouldCheckInVertical) {
-        const gemsPool = getGemsPool(gem, position, "vertical");
-
-        checkMatchingGem(gemsPool, gem, position, "vertical");
+        const row = this.getRows().find((row) => row.includes(gem.position));
+        const positionRelativeToRow = row.indexOf(position);
+        if (positionRelativeToRow > 1) {
+          const horizontalGemsPool = getGemsPool(gem, position);
+          if (horizontalGemsPool[0].color === horizontalGemsPool[1].color) {
+            gemColorToAvoid.push(horizontalGemsPool[0].color);
+          }
+        }
+        checkMatchingGem(gem, position, "vertical");
       }
     }
     return state;
