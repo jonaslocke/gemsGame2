@@ -182,6 +182,8 @@ class Game {
   setSelectedGem(index) {
     this.selectedGem = index;
     this.state.forEach((gem, idx) => gem.select(index === idx));
+    const neighbors = this.findNeighbors(this.state[index]);
+    this.setNeighbors(neighbors);
   }
 
   findNeighbors(gem) {
@@ -237,6 +239,14 @@ class Game {
 
     this.draw();
   }
+  unselectGems() {
+    for (let gem of this.state) {
+      gem.select(false);
+      gem.highlight(false);
+    }
+    this.selectedGem = -1;
+    this.draw();
+  }
 
   draw() {
     this.anchor.innerHTML = "";
@@ -244,18 +254,9 @@ class Game {
       const gemEl = gem.draw();
       gemEl.addEventListener("click", () => {
         const alreadySelected = this.selectedGem === gem.position;
-        if (alreadySelected) {
-          for (let gem of this.state) {
-            gem.select(false);
-            gem.highlight(false);
-            this.selectedGem = -1;
-          }
-        } else {
-          console.log({ position: gem.position, color: gem.color });
-          this.setSelectedGem(gem.position);
-          const neighbors = this.findNeighbors(gem);
-          this.setNeighbors(neighbors);
-        }
+        alreadySelected
+          ? this.unselectGems()
+          : this.setSelectedGem(gem.position);
       });
       this.anchor.appendChild(gemEl);
     }
@@ -325,7 +326,7 @@ class Game {
         }
       }
     }
-    // console.table(this.state);
+    console.table(this.state);
     this.draw();
   }
 }
