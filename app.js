@@ -16,6 +16,21 @@ const gemProps = {
   getColors: () => Object.values(gemProps.color),
 };
 
+const SIZE = 16;
+
+const clamp = (value, min, max) => {
+  value = Math.floor(value);
+  min = Math.floor(min);
+  max = Math.floor(max);
+
+  return value < min ? min : value > max ? max : value;
+};
+
+const getRandomItemFromArray = (array) => {
+  const random = Math.floor(Math.random() * array.length);
+  return array[random];
+};
+
 class Gem {
   constructor(color, position = 0) {
     this.color = this.getColor(color);
@@ -70,12 +85,60 @@ class Game {
 
   getState() {
     // return stateMock;
-    return new Array(this.size)
-      .fill()
-      .map(
-        (_, index) =>
-          new Gem(getRandomItemFromArray(gemProps.getColors()), index)
+    const state = [];
+    let gemColorToAvoid = [];
+    const checkMatchingGem = (gemsPool, gem, position, direction) => {
+      const shouldGetNewGem = gemsPool.every((g) => g.color === gem.color);
+      if (shouldGetNewGem) {
+        gemColorToAvoid.push(gem.color);
+        const gemsRoaster = gemProps
+          .getColors()
+          .filter((color) => !gemColorToAvoid.includes(color));
+
+        const newGem = new Gem(getRandomItemFromArray(gemsRoaster), position);
+        state[position] = newGem;
+      }
+    };
+    for (let position = 0; position < this.size; position++) {
+      const gem = new Gem(
+        getRandomItemFromArray(gemProps.getColors()),
+        position
       );
+
+      state.push(gem);
+      gemColorToAvoid = [];
+
+      //shouldGetNewGem in horizontal direction
+      if (position > 1) {
+        const row = this.getRows().find((row) => row.includes(gem.position));
+        const positionRelativeToRow = row.indexOf(position);
+        const positionInState = row[positionRelativeToRow];
+
+        if (positionRelativeToRow > 1) {
+          const gemsPool = [
+            state[positionInState - 2],
+            state[positionInState - 1],
+            gem,
+          ];
+          checkMatchingGem(gemsPool, gem, position, "horizontal");
+        }
+      }
+      //shouldGetNewGem in vertical direction
+      if (position >= this.gridSize * 2) {
+        const column = this.getColumns().find((column) =>
+          column.includes(gem.position)
+        );
+        const positionRelativeToColumn = column.indexOf(position);
+        const gemsPool = [
+          state[column[positionRelativeToColumn - 2]],
+          state[column[positionRelativeToColumn - 1]],
+          gem,
+        ];
+
+        checkMatchingGem(gemsPool, gem, position, "vertical");
+      }
+    }
+    return state;
   }
 
   getAnchor(anchor) {
@@ -88,17 +151,17 @@ class Game {
     this.state.forEach((gem, idx) => gem.select(index === idx));
   }
 
-  findNeighbors(gemIndex) {
-    gemIndex = Number(gemIndex);
-    let top = gemIndex - this.gridSize;
-    let right = gemIndex + 1;
-    let bottom = gemIndex + this.gridSize;
-    let left = gemIndex - 1;
+  findNeighbors(gem) {
+    const gemPosition = Number(gem.position);
+    let top = gemPosition - this.gridSize;
+    let right = gemPosition + 1;
+    let bottom = gemPosition + this.gridSize;
+    let left = gemPosition - 1;
 
     if (top < 0) {
       top = null;
     }
-    if (left < 0 || gemIndex % this.gridSize === 0) {
+    if (left < 0 || gemPosition % this.gridSize === 0) {
       left = null;
     }
     if (right % this.gridSize === 0 || right > this.size) {
@@ -155,9 +218,9 @@ class Game {
             this.selectedGem = -1;
           }
         } else {
-          console.log({ selectedGem: gem.position });
+          console.log({ position: gem.position, color: gem.color });
           this.setSelectedGem(gem.position);
-          const neighbors = this.findNeighbors(gem.position);
+          const neighbors = this.findNeighbors(gem);
           this.setNeighbors(neighbors);
         }
       });
@@ -198,6 +261,11 @@ class Game {
     return { column, row };
   }
 
+  isMatching(pool, gem) {
+    const gems = pool.map((index) => this.state[index]);
+    return gems.map((gem) => gem.color).every((color) => color === gem.color);
+  }
+
   update() {
     for (let index in this.state) {
       const gem = this.state[index];
@@ -206,24 +274,17 @@ class Game {
         vertical,
         hasNeighborsHorizontally,
         hasNeighborsVertically,
-      } = this.findNeighbors(index);
-
-      const isMatching = (pool) => {
-        const gems = pool.map((index) => this.state[index]);
-        return gems
-          .map((gem) => gem.color)
-          .every((color) => color === gem.color);
-      };
+      } = this.findNeighbors(gem);
 
       if (hasNeighborsVertically) {
-        if (isMatching(vertical)) {
+        if (this.isMatching(vertical, gem)) {
           gem.matching = true;
           vertical.forEach((postion) => (this.state[postion].matching = true));
         }
       }
 
       if (hasNeighborsHorizontally) {
-        if (isMatching(horizontal)) {
+        if (this.isMatching(horizontal, gem)) {
           gem.matching = true;
           horizontal.forEach(
             (postion) => (this.state[postion].matching = true)
@@ -231,7 +292,7 @@ class Game {
         }
       }
     }
-    console.table(this.state);
+    // console.table(this.state);
     this.draw();
   }
 }
@@ -335,19 +396,6 @@ const stateMock = [
   },
 ].map((gem, index) => new Gem(gem.color, index));
 
-const clamp = (value, min, max) => {
-  value = Math.floor(value);
-  min = Math.floor(min);
-  max = Math.floor(max);
-
-  return value < min ? min : value > max ? max : value;
-};
-
-const getRandomItemFromArray = (array) => {
-  const random = Math.floor(Math.random() * array.length);
-  return array[random];
-};
-
-const game = new Game(4, gameEl);
+const game = new Game(SIZE, gameEl);
 
 game.update();
