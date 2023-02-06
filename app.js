@@ -16,7 +16,7 @@ const gemProps = {
   getColors: () => Object.values(gemProps.color),
 };
 
-const SIZE = 6;
+const SIZE = 8;
 
 const clamp = (value, min, max) => {
   value = Math.floor(value);
@@ -49,15 +49,15 @@ class Gem {
 
   draw() {
     const gem = document.createElement("div");
-    gem.classList.add(...["gem", this.color.toLowerCase()]);
+    gem?.classList.add(...["gem", this.color.toLowerCase()]);
     if (this.selected) {
-      gem.classList.add("selected");
+      gem?.classList.add("selected");
     }
     if (this.highlighted) {
-      gem.classList.add("highlighted");
+      gem?.classList.add("highlighted");
     }
     if (this.matching) {
-      gem.classList.add("matching");
+      gem?.classList.add("matching");
     }
 
     gem.id = `gem-${this.position}`;
@@ -81,6 +81,7 @@ class Game {
     this.neighbors = null;
     this.columns = this.getColumns();
     this.rows = this.getRows();
+    this.matchedGems = [];
   }
 
   getState() {
@@ -90,7 +91,7 @@ class Game {
 
     const getGemsPool = (gem, position, direction = "horizontal") => {
       if (direction === "horizontal") {
-        const row = this.getRows().find((row) => row.includes(gem.position));
+        const row = this.getRows().find((row) => row.includes(gem?.position));
         const positionRelativeToRow = row.indexOf(position);
         const positionInState = row[positionRelativeToRow];
 
@@ -107,7 +108,7 @@ class Game {
 
       if (direction === "vertical") {
         const column = this.getColumns().find((column) =>
-          column.includes(gem.position)
+          column.includes(gem?.position)
         );
         const positionRelativeToColumn = column.indexOf(position);
         const gemsPool = [
@@ -124,9 +125,9 @@ class Game {
     const checkMatchingGem = (gem, position, direction) => {
       const gemsPool = getGemsPool(gem, position, direction);
       if (gemsPool) {
-        const shouldGetNewGem = gemsPool.every((g) => g.color === gem.color);
+        const shouldGetNewGem = gemsPool.every((g) => g.color === gem?.color);
         if (shouldGetNewGem) {
-          gemColorToAvoid.push(gem.color);
+          gemColorToAvoid.push(gem?.color);
           const gemsRoaster = gemProps
             .getColors()
             .filter((color) => !gemColorToAvoid.includes(color));
@@ -160,7 +161,7 @@ class Game {
       }
       //shouldGetNewGem in vertical direction
       if (shouldCheckInVertical) {
-        const row = this.getRows().find((row) => row.includes(gem.position));
+        const row = this.getRows().find((row) => row.includes(gem?.position));
         const positionRelativeToRow = row.indexOf(position);
         if (positionRelativeToRow > 1) {
           const horizontalGemsPool = getGemsPool(gem, position);
@@ -181,13 +182,13 @@ class Game {
 
   setSelectedGem(index) {
     this.selectedGem = index;
-    this.state.forEach((gem, idx) => gem.select(index === idx));
+    this.state.forEach((gem, idx) => gem?.select(index === idx));
     const neighbors = this.findNeighbors(this.state[index]);
     this.setNeighbors(neighbors);
   }
 
   findNeighbors(gem) {
-    const gemPosition = Number(gem.position);
+    const gemPosition = Number(gem?.position);
     let top = gemPosition - this.gridSize;
     let right = gemPosition + 1;
     let bottom = gemPosition + this.gridSize;
@@ -234,7 +235,7 @@ class Game {
 
   highlightNeighbors() {
     for (let gem of this.state) {
-      gem.highlighted = Object.values(this.neighbors).includes(gem.position);
+      gem.highlighted = Object.values(this.neighbors).includes(gem?.position);
     }
 
     this.draw();
@@ -242,8 +243,8 @@ class Game {
 
   unselectGems() {
     for (let gem of this.state) {
-      gem.select(false);
-      gem.highlight(false);
+      gem?.select(false);
+      gem?.highlight(false);
     }
     this.selectedGem = -1;
     this.draw();
@@ -261,19 +262,23 @@ class Game {
   draw() {
     this.anchor.innerHTML = "";
     for (let gem of this.state) {
-      const gemEl = gem.draw();
-      gemEl.addEventListener("click", () => {
-        const alreadySelected = this.selectedGem === gem.position;
-        const shouldSwapGems =
-          this.selectedGem >= 0 &&
-          Object.values(this.neighbors).includes(gem.position);
-        if (shouldSwapGems) {
-          return this.swapGems(gem.position);
-        }
-        return alreadySelected
-          ? this.unselectGems()
-          : this.setSelectedGem(gem.position);
-      });
+      let gemEl = document.createElement("div");
+      gemEl.classList.add("gem");
+      if (gem) {
+        gemEl = gem?.draw();
+        gemEl.addEventListener("click", () => {
+          const alreadySelected = this.selectedGem === gem?.position;
+          const shouldSwapGems =
+            this.selectedGem >= 0 &&
+            Object.values(this.neighbors).includes(gem?.position);
+          if (shouldSwapGems) {
+            return this.swapGems(gem?.position);
+          }
+          return alreadySelected
+            ? this.unselectGems()
+            : this.setSelectedGem(gem?.position);
+        });
+      }
       this.anchor.appendChild(gemEl);
     }
   }
@@ -313,7 +318,50 @@ class Game {
 
   isMatching(pool, gem) {
     const gems = pool.map((index) => this.state[index]);
-    return gems.map((gem) => gem.color).every((color) => color === gem.color);
+    return gems.map((gem) => gem?.color).every((color) => color === gem?.color);
+  }
+
+  destroyGems() {
+    const matchingGems = this.state.filter((gem) => gem?.matching);
+    const positions = matchingGems.map((gem) => gem?.position);
+
+    this.matchedGems.push(...matchingGems);
+
+    if (!!positions.length) {
+      let newState = [...this.state];
+
+      for (let gem of newState) {
+        if (positions.includes(gem?.position)) {
+          newState[gem?.position] = null;
+        }
+      }
+
+      const affectedColumns = this.columns.filter((column) =>
+        column.map((position) => newState[position]).includes(null)
+      );
+
+      for (let column of affectedColumns) {
+        const remnantsGems = column
+          .map((position) => newState[position])
+          .filter((gem) => !!gem)
+          .reverse();
+
+        column.reverse().forEach((position, index) => {
+          const currentGem = remnantsGems[index];
+          if (currentGem) {
+            currentGem.position = position;
+            newState[position] = currentGem;
+          } else {
+            //add new gem
+            newState[position] = null;
+          }
+        });
+      }
+
+      this.state = newState;
+
+      this.draw();
+    }
   }
 
   update() {
@@ -344,109 +392,11 @@ class Game {
       }
     }
     this.unselectGems();
-    console.table(this.state);
+    this.destroyGems();
+    // console.table(this.state);
     this.draw();
   }
 }
-
-const stateMock = [
-  {
-    color: "GREEN",
-    index: 0,
-    selected: false,
-    highlighted: false,
-  },
-  {
-    color: "GREEN",
-    index: 1,
-    selected: false,
-    highlighted: false,
-  },
-  {
-    color: "GREEN",
-    index: 2,
-    selected: false,
-    highlighted: false,
-  },
-  {
-    color: "YELLOW",
-    index: 3,
-    selected: false,
-    highlighted: false,
-  },
-  {
-    color: "GREEN",
-    index: 4,
-    selected: false,
-    highlighted: false,
-  },
-  {
-    color: "RED",
-    index: 5,
-    selected: false,
-    highlighted: false,
-  },
-  {
-    color: "GREEN",
-    index: 6,
-    selected: false,
-    highlighted: false,
-  },
-  {
-    color: "YELLOW",
-    index: 7,
-    selected: false,
-    highlighted: false,
-  },
-  {
-    color: "BLUE",
-    index: 8,
-    selected: false,
-    highlighted: false,
-  },
-  {
-    color: "PURPLE",
-    index: 9,
-    selected: false,
-    highlighted: false,
-  },
-  {
-    color: "RED",
-    index: 10,
-    selected: false,
-    highlighted: false,
-  },
-  {
-    color: "YELLOW",
-    index: 11,
-    selected: false,
-    highlighted: false,
-  },
-  {
-    color: "PURPLE",
-    index: 12,
-    selected: false,
-    highlighted: false,
-  },
-  {
-    color: "YELLOW",
-    index: 13,
-    selected: false,
-    highlighted: false,
-  },
-  {
-    color: "GREEN",
-    index: 14,
-    selected: false,
-    highlighted: false,
-  },
-  {
-    color: "YELLOW",
-    index: 15,
-    selected: false,
-    highlighted: false,
-  },
-].map((gem, index) => new Gem(gem.color, index));
 
 const game = new Game(SIZE, gameEl);
 
